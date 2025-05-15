@@ -1,41 +1,30 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from snake_game_ai import SnakeGameAI
-from q_learning_agent import QLearningAgent
+from snake_ai_bot.snake_game_ai import SnakeGameAI
+from snake_ai_bot.q_learning_agent import QLearningAgent
 
 import time
 
+def train():
+    game = SnakeGameAI()
+    agent = QLearningAgent(game)
 
-# Inicializar o ambiente e o agente
-game = SnakeGameAI()
-agent = QLearningAgent(game)
+    n_episodes = 1000
 
-# Parâmetros de treino
-EPISODES = 500
-
-for episode in range(EPISODES):
-    game.reset()
-    total_reward = 0
-    done = False
-
-    while not done:
-        state = game.get_state()
-        action = agent.get_action(state)
-        next_state, reward, done = game.step(action)
-        agent.update_q_table(state, action, reward, next_state)
-        total_reward += reward
-
-    print(f"Episode {episode + 1} - Score: {game.score} - Total Reward: {total_reward}")
-
-    # Exibir visualmente o jogo de vez em quando
-    if episode % 50 == 0:
+    for episode in range(n_episodes):
         game.reset()
-        done = False
-        while not done:
-            state = game.get_state()
+        state = game.get_state()
+        total_reward = 0
+        while True:
             action = agent.get_action(state)
-            _, _, done = game.step(action)
-            game.render()
-            time.sleep(0.1)
+            reward, done, score = game.play_step(action)
+            next_state = game.get_state()
+            agent.update_q_table(state, action, reward, next_state)
+            state = next_state
+            total_reward += reward
+            if done:
+                break
+        agent.decay_epsilon()
+        print(f"Episode {episode+1} - Score: {score} - Total Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.4f}")
+
+if __name__ == "__main__":
+    train()
+
